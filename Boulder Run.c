@@ -16,16 +16,16 @@ and illumination/shadow mode which hides sections of the map to simulate a
 realistic cave experience. 
 */
 
-// Provided Libraries
+//provided Libraries
 #include <stdio.h>
 #include <stdlib.h>
 
-// Add your own #include statements below this line
+//add your own #include statements below this line
 
 #include <ctype.h>
 #include <math.h>
 
-// Provided constants
+//provided constants
 
 #define COLS 10
 #define ROWS 10
@@ -33,10 +33,13 @@ realistic cave experience.
 #define INVALID_COL -1
 #define INITIAL_LIVES 3
 
-// Add your own #defines constants below this line
+//add your own #defines constants below this line
 
 #define FALSE                 0
 #define TRUE                  1
+
+#define LAST_ROW              (ROWS - 1)
+#define LAST_COL              (COLS - 1)
 
 #define UP_SINGLE            'w'
 #define DOWN_SINGLE          's'
@@ -73,7 +76,7 @@ realistic cave experience.
 #define GRAVITY_LEFT         'a'
 #define GRAVITY_RIGHT        'd'
 
-#define ASCII_LIMIT           256
+#define ASCII_LIMIT           128
 #define CMD_HISTORY_LENGTH    5
 #define LAVA_GAME_BIRTH_COUNT 3
 #define LAVA_SURVIVE_MIN      2
@@ -92,8 +95,8 @@ const int D_COL[ASCII_LIMIT] = {
     [UP_DASH] = 0, [DOWN_DASH] = 0, [LEFT_DASH] = -1, [RIGHT_DASH] = 1
 };
 
-// Provided Enums
-// Enum for features on the game board
+//provided Enums
+//enum for features on the game board
 enum entity {
     EMPTY,
     DIRT,
@@ -106,21 +109,21 @@ enum entity {
     PLAYER
 };
 
-// Add your own enums below this line
+//add your own enums below this line
 enum lava_mode {
     LAVA_NONE,
     GAME_OF_LAVA,
     LAVA_SEEDS
 };
 
-// Represents a tile/cell on the game board
+//represents a tile/cell on the game board
 struct tile {
     enum entity entity;
     int has_lava;
     int next_turn_lava;
 };
 
-// Add your own structs below this line
+//add your own structs below this line
 struct constants {
     int start_row;
     int start_col;
@@ -145,7 +148,7 @@ struct game_status {
     char cmd_history[CMD_HISTORY_LENGTH];
 };
 
-// Provided Function Prototypes
+//provided Function Prototypes
 void initialise_board(struct tile board[ROWS][COLS]);
 void print_board(struct tile board[ROWS][COLS], int lives_remaining);
 void print_board_line(void);
@@ -158,52 +161,56 @@ void print_map_statistics(
     int maximum_points_remaining
 );
 
-// Add your function prototypes below this line
+//add your function prototypes below this line
 
-//Setup function prototypes
+//setup function prototypes
 void initialise_player_pos(struct tile board[ROWS][COLS], 
     struct constants *constants);
 void add_features(struct tile board[ROWS][COLS]);
 void add_single_tile_features(struct tile board[ROWS][COLS], char instruction);
-void add_exits(struct tile board[ROWS][COLS]);
-void add_grouped_walls(struct tile board[ROWS][COLS], 
-    int start_row, int start_col, int end_row, int end_col);
+void add_grouped_walls(struct tile board[ROWS][COLS]);
 
-//Gameplay function prototypes
+//gameplay function prototypes
 void gameplay(struct tile game_board[ROWS][COLS], 
     struct tile true_board[ROWS][COLS], 
-    struct constants constants, struct game_status *status);
+    struct game_status *status, struct constants constants);
 void static_instructions(struct tile board[ROWS][COLS], 
-    struct constants constants, struct game_status status, char instruction);
-void move_player_single(struct tile board[ROWS][COLS], char instruction, 
-    struct game_status *status);
+    struct game_status status, struct constants constants, char instruction);
+void move_player_single(struct tile board[ROWS][COLS],  
+    struct game_status *status, char instruction);
 void move_player_dash(struct tile board[ROWS][COLS], 
-    char instruction, char instruction2, struct game_status *status);
+    struct game_status *status, char instruction, char instruction2);
+void dash_move(struct tile board[ROWS][COLS], 
+    struct game_status *status, int new_row, int new_col);
 
 void entities_turns(struct tile game_board[ROWS][COLS],
     struct tile true_board[ROWS][COLS], 
-    struct constants constants, struct game_status *status);
+    struct game_status *status, struct constants constants);
 void boulder_turn(struct tile board[ROWS][COLS], 
-    struct constants constants, struct game_status *status);
-void boulder_up(struct tile board[ROWS][COLS], 
-    struct constants constants, struct game_status *status);
-void boulder_down(struct tile board[ROWS][COLS], 
-    struct constants constants, struct game_status *status);
-void boulder_left(struct tile board[ROWS][COLS], 
-    struct constants constants, struct game_status *status);
-void boulder_right(struct tile board[ROWS][COLS], 
-    struct constants constants, struct game_status *status);
-void boulder_ud_spawn_check(struct tile board[ROWS][COLS], 
-    struct constants constants, struct game_status status, int i, int j);
-void boulder_lr_spawn_check(struct tile board[ROWS][COLS], 
-    struct constants constants, struct game_status status, int i, int j);
+    struct game_status *status, struct constants constants);
+void boulder_move(struct tile board[ROWS][COLS], struct game_status *status, 
+    struct constants constants, int r_offset, int c_offset, int i, int j);
+void boulder_spawn_check(struct tile board[ROWS][COLS], 
+    struct game_status status, struct constants constants,
+    int r_offset, int c_offset, int i, int j);
+
 void lava_turn(struct tile board[ROWS][COLS], struct game_status *status);
 void game_of_lava(struct tile board[ROWS][COLS]);
 void lava_seeds(struct tile board[ROWS][COLS]);
 
 void player_hit(struct tile game_board[ROWS][COLS], 
-    struct tile true_board[ROWS][COLS], struct constants constants, 
-    struct game_status *status);
+    struct tile true_board[ROWS][COLS], struct game_status *status, 
+    struct constants constants);
+void zero_life_ending_sequence(struct tile game_board[ROWS][COLS],
+    struct tile true_board[ROWS][COLS], 
+    struct game_status *status, struct constants constants);
+void respawn_sequence(struct tile game_board[ROWS][COLS],
+    struct tile true_board[ROWS][COLS], 
+    struct game_status *status, struct constants constants);
+void respawn_blocked_ending(struct tile game_board[ROWS][COLS],
+    struct tile true_board[ROWS][COLS], 
+    struct game_status *status, struct constants constants);
+
 void illuminate_toggle(struct game_status *status);
 void shadow_toggle(struct game_status *status);
 void illuminate(struct tile game_board[ROWS][COLS], 
@@ -212,33 +219,41 @@ void shadow(struct tile game_board[ROWS][COLS],
     struct tile true_board[ROWS][COLS], struct game_status status);
 int check_hidden(struct tile board[ROWS][COLS], 
     struct game_status status, int i, int j);
-
-//Helper functions
-void initialise_constants_and_game_status(struct tile true_board[ROWS][COLS],
-    struct constants *constants, struct game_status *status);
-int check_valid_placement(struct tile board[ROWS][COLS], int row, int col);
-int validate_grouped_walls(struct tile board[ROWS][COLS], 
-    int start_row, int start_col, int end_row, int end_col);
-int valid_move(struct tile board[ROWS][COLS], int new_row, int new_col);
-int entity_counter(struct tile board[ROWS][COLS], enum entity entity_type);
-int update_score(struct tile board[ROWS][COLS], 
-    struct game_status status, int row, int col);
-void check_exit_condition(struct tile board[ROWS][COLS], 
-    struct game_status status);
-void open_exits(struct tile board[ROWS][COLS]);
-void board_update(struct tile value_board[ROWS][COLS], 
-    struct tile target_board[ROWS][COLS]);
-void print_correct_board(struct tile game_board[ROWS][COLS], 
-    struct tile true_board[ROWS][COLS], 
-    struct game_status status, struct constants constants);
-void print_gravity_direction(int gravity);
-void update_command_history(struct game_status *status, char new_command);
-void check_lava_code(struct game_status *status);
-int count_adjacent_lava(struct tile board[ROWS][COLS], int i, int j);
 int above_corner_check(struct tile board[ROWS][COLS], 
     double row, double col, int gradient_x, int gradient_y);
 int below_corner_check(struct tile board[ROWS][COLS], 
     double row, double col, int gradient_x, int gradient_y);
+
+//helper functions
+void initialise_constants_and_game_status(struct tile true_board[ROWS][COLS],
+    struct game_status *status, struct constants *constants);
+
+int check_valid_placement(struct tile board[ROWS][COLS], int row, int col);
+int validate_grouped_walls(struct tile board[ROWS][COLS], 
+    int start_row, int start_col, int end_row, int end_col);
+int valid_move(struct tile board[ROWS][COLS], int new_row, int new_col);
+
+int entity_counter(struct tile board[ROWS][COLS], enum entity entity_type);
+int update_score(struct tile board[ROWS][COLS], 
+    struct game_status status, int row, int col);
+int calc_max_points_remaining(struct tile board[ROWS][COLS], 
+    struct game_status status);
+double calc_completion_percent(struct tile board[ROWS][COLS], 
+    struct constants constants);
+void check_exit_condition(struct tile board[ROWS][COLS], 
+    struct game_status status);
+void open_exits(struct tile board[ROWS][COLS]);
+
+void print_correct_board(struct tile game_board[ROWS][COLS], 
+    struct tile true_board[ROWS][COLS], 
+    struct game_status status, struct constants constants);
+void print_gravity_direction(struct game_status *status);
+
+void update_command_history(struct game_status *status, char new_command);
+void check_lava_code(struct game_status *status);
+int count_adjacent_lava(struct tile board[ROWS][COLS], int i, int j);
+
+int type_check(struct tile board[ROWS][COLS], int base_row, int base_col);
 void shadow_entire_board(struct tile game_board[ROWS][COLS], 
     struct tile true_board[ROWS][COLS], struct game_status status);
 
@@ -248,11 +263,11 @@ void shadow_entire_board(struct tile game_board[ROWS][COLS],
 ==============================================================================
 */
 int main(void) {
+
     printf("Welcome to CS Caverun!\n\n");
     printf("--- Game Setup Phase ---\n");
 
     //set up game and true boards (necessary for illumination) 
-    //by making every tile dirt
     struct tile game_board[ROWS][COLS];
     struct tile true_board[ROWS][COLS];
     initialise_board(game_board);
@@ -264,7 +279,7 @@ int main(void) {
 
     initialise_player_pos(true_board, &constants);
     add_features(true_board);
-    gameplay(game_board, true_board, constants, &status);
+    gameplay(game_board, true_board, &status, constants);
 
     return 0;
 }
@@ -285,10 +300,11 @@ int main(void) {
 //places the player in a valid starting position 
 void initialise_player_pos(struct tile board[ROWS][COLS], 
     struct constants *constants) {
-    int row, col;
-    char valid_starting_pos = 'f';
 
-    while (valid_starting_pos != 't') {
+    int row, col;
+    char valid_starting_pos = FALSE;
+
+    while (valid_starting_pos != TRUE) {
         printf("Enter the player's starting position: ");
         scanf("%d %d", &row, &col);
 
@@ -296,11 +312,11 @@ void initialise_player_pos(struct tile board[ROWS][COLS],
             col >= COLS || col < 0) {
             printf("Position %d %d is invalid!\n", row, col);
         } else {
-            valid_starting_pos = 't';
+            valid_starting_pos = TRUE;
         }
     }
     board[row][col].entity = PLAYER;
-    //stores this position as initial player position
+
     constants->start_row = row;
     constants->start_col = col;
     print_board(board, INITIAL_LIVES);
@@ -308,28 +324,23 @@ void initialise_player_pos(struct tile board[ROWS][COLS],
 
 //adds every possible feature to the game map
 void add_features(struct tile board[ROWS][COLS]) {
+
     char instruction;
     printf("Enter map features:\n");
 
     while (scanf(" %c", &instruction) == 1) {
         if (instruction == START) {
             break;
-        }
-        if (instruction == PLACE_WALL || instruction == PLACE_BOULDER || 
-            instruction == PLACE_GEM || instruction == PLACE_LAVA) {
+        } else if (instruction == PLACE_WALL || instruction == PLACE_BOULDER || 
+            instruction == PLACE_GEM || instruction == PLACE_LAVA ||
+            instruction == PLACE_EXIT) {
             add_single_tile_features(board, instruction);
-        } else if (instruction == PLACE_EXIT) {
-            add_exits(board);
         } else if (instruction == PLACE_GROUPED_WALLS) {
-            int start_row, start_col, end_row, end_col;
-            scanf("%d %d %d %d", &start_row, &start_col, &end_row, &end_col);
-            add_grouped_walls(board, start_row, start_col, end_row, end_col);
+            add_grouped_walls(board);
         }
     }
 
-    //opens all exits if there are no gems
-    int gem_count = entity_counter(board, GEM);
-    if (gem_count == 0) {
+    if (entity_counter(board, GEM) == 0) {
         open_exits(board);
     }
     print_board(board, INITIAL_LIVES);
@@ -337,6 +348,7 @@ void add_features(struct tile board[ROWS][COLS]) {
 
 //adds non-group wall features to the map
 void add_single_tile_features(struct tile board[ROWS][COLS], char instruction) {
+
     int row = 0;
     int col = 0;
 
@@ -351,24 +363,18 @@ void add_single_tile_features(struct tile board[ROWS][COLS], char instruction) {
         } else if (instruction == PLACE_GEM) {
             board[row][col].entity = GEM;
         } else if (instruction == PLACE_LAVA) {
-            board[row][col].has_lava = 1;
+            board[row][col].has_lava = TRUE;
+        } else if (instruction == PLACE_EXIT) {
+            board[row][col].entity = EXIT_LOCKED;
         }
     }
 }
 
-//adds exits to the map
-void add_exits(struct tile board[ROWS][COLS]) {
-    int row = 0;
-    int col = 0;
-    scanf("%d %d", &row, &col);
+//places walls on each tile in the rectangular bound
+void add_grouped_walls(struct tile board[ROWS][COLS]) {
 
-    if (check_valid_placement(board, row, col)) {
-        board[row][col].entity = EXIT_LOCKED;
-    }
-}
-
-void add_grouped_walls(struct tile board[ROWS][COLS], 
-    int start_row, int start_col, int end_row, int end_col) {
+    int start_row, start_col, end_row, end_col;
+    scanf("%d %d %d %d", &start_row, &start_col, &end_row, &end_col);
     
     if (validate_grouped_walls(board, start_row, start_col, end_row, end_col)) {
         for (int i = start_row; i <= end_row; i++) {
@@ -391,44 +397,42 @@ void add_grouped_walls(struct tile board[ROWS][COLS],
 ==============================================================================
 */
 
-//controls player single and dash movements
+//handles gameplay loop
 void gameplay(struct tile game_board[ROWS][COLS], struct tile true_board[ROWS]
-    [COLS], struct constants constants, struct game_status *status) {
+    [COLS], struct game_status *status, struct constants constants) {
 
-    initialise_constants_and_game_status(true_board, &constants, status); 
+    initialise_constants_and_game_status(true_board, status, &constants); 
     char instruction, instruction2;
 
     while (scanf(" %c", &instruction) == 1) {
         update_command_history(status, instruction);
         check_lava_code(status);
         
+        //must pass turn if instruction is L to not trigger any events
         if (instruction == LAVA_TRIGGER) {
         } else if (!isupper(instruction)) {
             if (instruction == ILLUMINATE) {
-                scanf("%d", &status->illumination_radius);
                 illuminate_toggle(status);
                 print_correct_board(game_board, true_board, *status, constants);
             } else if (instruction == SHADOW) {
                 shadow_toggle(status);
                 print_correct_board(game_board, true_board, *status, constants);
             } else if (instruction == GRAVITY) {
-                scanf(" %c", &status->gravity);
-                print_gravity_direction(status->gravity);
-                entities_turns(game_board, true_board, constants, status);
+                print_gravity_direction(status);
+                entities_turns(game_board, true_board, status, constants);
             } else if (instruction == QUIT || instruction == PRINT_SCORE || 
                 instruction == PRINT_MAP_STATS) {
                 static_instructions(true_board, 
-                    constants, *status, instruction);
+                    *status, constants, instruction);
             } else {
-                move_player_single(true_board, instruction, status);
-                entities_turns(game_board, true_board, constants, status);
+                move_player_single(true_board, status, instruction);
+                entities_turns(game_board, true_board, status, constants);
             }
         } else {
             scanf(" %c", &instruction2);
             if (status->can_dash) {
-                move_player_dash(true_board, instruction, instruction2, status);
-                status->can_dash = FALSE; 
-                entities_turns(game_board, true_board, constants, status);
+                move_player_dash(true_board, status, instruction, instruction2);
+                entities_turns(game_board, true_board, status, constants);
             } else {
                 printf("You're out of breath! Skipping dash move...\n");
                 status->can_dash = TRUE; 
@@ -438,37 +442,29 @@ void gameplay(struct tile game_board[ROWS][COLS], struct tile true_board[ROWS]
     }
 }
 
-//handles non-movement instructions
+//handles all static instructions
 void static_instructions(struct tile board[ROWS][COLS], 
-    struct constants constants, struct game_status status, char instruction) {
+    struct game_status status, struct constants constants, char instruction) {
+
     if (instruction == QUIT) {
         printf("--- Quitting Game ---\n");
         exit(0);
     } else if (instruction == PRINT_SCORE) {
         printf("You have %d point(s)!\n", status.score);
     } else if (instruction == PRINT_MAP_STATS) {
-        int maximum_points_remaining;
-        if (status.lava_mode != LAVA_NONE) {
-            maximum_points_remaining = (entity_counter(board, DIRT) * 
-            POINTS_DIRT_LAVA) + (entity_counter(board, GEM) * POINTS_GEM_LAVA);
-        } else {
-            maximum_points_remaining = entity_counter(board, DIRT) * 
-            POINTS_DIRT_NORMAL + 
-            (entity_counter(board, GEM) * POINTS_GEM_NORMAL);
-        }
+        int maximum_points_remaining = calc_max_points_remaining(board, status);
+        double completion_percent = calc_completion_percent(board, constants);
+
         print_map_statistics(entity_counter(board, DIRT), 
         entity_counter(board, GEM), entity_counter(board, BOULDER), 
-        100.0 * (1.0 - (double)(entity_counter(board, DIRT) + 
-        entity_counter(board, GEM)) / 
-        (constants.init_dirt + constants.init_gem)), 
-        maximum_points_remaining
-        );
+        completion_percent, maximum_points_remaining);
     }
 }
 
 //moves player by a single tile
-void move_player_single(struct tile board[ROWS][COLS], char instruction, 
-    struct game_status *status) {
+void move_player_single(struct tile board[ROWS][COLS], 
+    struct game_status *status, char instruction) {
+
     int new_row = status->player_row + D_ROW[(int) instruction];
     int new_col = status->player_col + D_COL[(int) instruction];
 
@@ -486,290 +482,161 @@ void move_player_single(struct tile board[ROWS][COLS], char instruction,
     status->can_dash = TRUE;
 }
 
-//moves player by dash 
+//moves player by multiple tiles if dash if valid
 void move_player_dash(struct tile board[ROWS][COLS], 
-    char instruction, char instruction2, struct game_status *status) {
+    struct game_status *status, char instruction, char instruction2) {
+    
+    //immediately ensures the next action cannot be a dash
+    status->can_dash = FALSE; 
+    
+    //maps first movement instruction to new board location
     int new_row1 = status->player_row + D_ROW[(int) instruction];
     int new_col1 = status->player_col + D_COL[(int) instruction];
-
-    //first move validation
     if (!valid_move(board, new_row1, new_col1)) {
         return;  
     }
     //apply first move
-    status->score += update_score(board, *status, new_row1, new_col1);
-    board[status->player_row][status->player_col].entity = EMPTY; 
-    status->player_row = new_row1;
-    status->player_col = new_col1;
-
-    check_exit_condition(board, *status);
+    dash_move(board, status, new_row1, new_col1);
 
     //maps second movement instruction to new board location
     int new_row2 = status->player_row + D_ROW[(int) instruction2];
     int new_col2 = status->player_col + D_COL[(int) instruction2];
-
-    //second move validation
     if (!valid_move(board, new_row2, new_col2)) {
         board[status->player_row][status->player_col].entity = PLAYER; 
         return;
     }
     //apply second move
-    status->score += update_score(board, *status, new_row2, new_col2);
-    board[status->player_row][status->player_col].entity = EMPTY;
-    status->player_row = new_row2;
-    status->player_col = new_col2;
-
-    check_exit_condition(board, *status);
+    dash_move(board, status, new_row2, new_col2);
     board[status->player_row][status->player_col].entity = PLAYER;
 }
 
-//control movement and logic of all non-player entities
+//applies the move once it's valid
+void dash_move(struct tile board[ROWS][COLS], 
+    struct game_status *status, int new_row, int new_col) {
+
+    status->score += update_score(board, *status, new_row, new_col);
+    board[status->player_row][status->player_col].entity = EMPTY; 
+    status->player_row = new_row;
+    status->player_col = new_col;
+
+    check_exit_condition(board, *status);
+}
+
+//control movement and logic of all boulder and lava entities
 void entities_turns(struct tile game_board[ROWS][COLS],
     struct tile true_board[ROWS][COLS], 
-    struct constants constants, struct game_status *status) {
+    struct game_status *status, struct constants constants) {
 
-    boulder_turn(true_board, constants, status);
+    boulder_turn(true_board, status, constants);
     if (status->boulder_hit) {
-        player_hit(game_board, true_board, constants, status);
+        player_hit(game_board, true_board, status, constants);
     }
 
     lava_turn(true_board, status);
     if (status->lava_hit) {
-        player_hit(game_board, true_board, constants, status);
+        player_hit(game_board, true_board, status, constants);
     } else {
         print_correct_board(game_board, true_board, *status, constants);
     }
 }
 
-//boulder movement
+//boulder movement based on direction of gravity 
 void boulder_turn(struct tile board[ROWS][COLS], 
-    struct constants constants, struct game_status *status) {
+    struct game_status *status, struct constants constants) {
 
     if (status->gravity == GRAVITY_UP) {
-        boulder_up(board, constants, status);
+        for (int i = 0; i < LAST_ROW; i++) {
+            for (int j = 0; j < COLS; j++) {
+                boulder_move(board, status, constants, 1, 0, i, j);
+            }
+        }
     } else if (status->gravity == GRAVITY_DOWN) {
-        boulder_down(board, constants, status);
+        for (int i = LAST_ROW; i > 0; i--) {
+            for (int j = 0; j < COLS; j++) {
+                boulder_move(board, status, constants, -1, 0, i, j);
+            }
+        }
     } else if (status->gravity == GRAVITY_LEFT) {
-        boulder_left(board, constants, status);
+        for (int j = 0; j < LAST_COL; j++) {
+            for (int i = 0; i < ROWS; i++) {
+                boulder_move(board, status, constants, 0, 1, i, j);
+            }
+        }
     } else if (status->gravity == GRAVITY_RIGHT) {
-        boulder_right(board, constants, status);
+        for (int j = LAST_COL; j > 0; j--) {
+            for (int i = 0; i < ROWS; i++) {
+                boulder_move(board, status, constants, 0, -1, i, j);
+            }
+        }
     }
 }
 
-void boulder_up(struct tile board[ROWS][COLS], 
-    struct constants constants, struct game_status *status) {
+void boulder_move(struct tile board[ROWS][COLS], struct game_status *status,
+    struct constants constants, int r_offset, int c_offset, int i, int j) {
 
-    for (int i = 0; i < ROWS - 1; i++) {
-        for (int j = 0; j < COLS; j++) {
-            ///boulder hits player and spawn is currently occupied
-            if (board[i][j].entity == PLAYER && 
-                board[i + 1][j].entity == BOULDER && board[constants.start_row]
-                [constants.start_col].entity != EMPTY) {
-                boulder_ud_spawn_check(board, constants, *status, i, j);
-                status->boulder_hit = TRUE;
-            }
-            //boulder moves down into space
-            else if (board[i][j].entity == EMPTY && 
-                board[i + 1][j].entity == BOULDER) {
-                board[i][j].entity = BOULDER;
-                board[i + 1][j].entity = EMPTY;
-            }
-            //boulder hits player on 1 life
-            if (board[i][j].entity == PLAYER && 
-                board[i + 1][j].entity == BOULDER && status->lives == 1) {
-                board[i + 1][j].entity = EMPTY;
-                status->boulder_hit = TRUE;
-            } 
-            //boulder hits player on 2+ lives
-            else if (board[i][j].entity == PLAYER && 
-                board[i + 1][j].entity == BOULDER && status->lives > 1) {
-                board[i][j].entity = BOULDER;
-                board[i + 1][j].entity = EMPTY;
-                status->boulder_hit = TRUE;
-            }  
-        }
+    ///boulder hits player and spawn is currently occupied
+    if (board[i][j].entity == PLAYER && 
+        board[i + r_offset][j + c_offset].entity == BOULDER && 
+        board[constants.start_row]
+        [constants.start_col].entity != EMPTY) {
+        boulder_spawn_check(board, *status, 
+            constants, r_offset, c_offset, i, j);
+        status->boulder_hit = TRUE;
+    }
+    //boulder moves down into space
+    else if (board[i][j].entity == EMPTY && 
+        board[i + r_offset][j + c_offset].entity == BOULDER) {
+        board[i][j].entity = BOULDER;
+        board[i + r_offset][j + c_offset].entity = EMPTY;
+    }
+    //boulder hits player on 1 life
+    if (board[i][j].entity == PLAYER && 
+        board[i + r_offset][j + c_offset].entity == BOULDER && 
+        status->lives == 1) {
+        board[i + r_offset][j + c_offset].entity = EMPTY;
+        status->boulder_hit = TRUE;
     } 
+    //boulder hits player on 2+ lives
+    else if (board[i][j].entity == PLAYER && 
+        board[i + r_offset][j + c_offset].entity == BOULDER && 
+        status->lives > 1) {
+        board[i][j].entity = BOULDER;
+        board[i + r_offset][j + c_offset].entity = EMPTY;
+        status->boulder_hit = TRUE;
+    }  
 }
 
-void boulder_down(struct tile board[ROWS][COLS], 
-    struct constants constants, struct game_status *status) {
-
-    for (int i = ROWS - 1; i > 0; i--) {
-        for (int j = 0; j < COLS; j++) {
-            ///boulder hits player and spawn is currently occupied
-            if (board[i][j].entity == PLAYER && 
-                board[i - 1][j].entity == BOULDER && board[constants.start_row]
-                [constants.start_col].entity != EMPTY) {
-                boulder_ud_spawn_check(board, constants, *status, i, j);
-                status->boulder_hit = TRUE;
-            } 
-            //boulder moves down into space
-            else if (board[i][j].entity == EMPTY && 
-                board[i - 1][j].entity == BOULDER) {
-                board[i][j].entity = BOULDER;
-                board[i - 1][j].entity = EMPTY;
-            }
-            //boulder hits player on 1 life
-            if (board[i][j].entity == PLAYER && 
-                board[i - 1][j].entity == BOULDER && status->lives == 1) {
-                board[i - 1][j].entity = EMPTY;
-                status->boulder_hit = TRUE;
-            } 
-            //boulder hits player on 2+ lives
-            else if (board[i][j].entity == PLAYER && 
-                board[i - 1][j].entity == BOULDER && status->lives > 1) {
-                board[i][j].entity = BOULDER;
-                board[i - 1][j].entity = EMPTY;
-                status->boulder_hit = TRUE;
-            }  
-        }
-    } 
-}
-
-void boulder_left(struct tile board[ROWS][COLS], 
-    struct constants constants, struct game_status *status) {
-    
-    for (int j = 0; j < COLS - 1; j++) {
-        for (int i = 0; i < ROWS; i++) {
-            ///boulder hits player and spawn is currently occupied
-            if (board[i][j].entity == PLAYER && 
-                board[i][j + 1].entity == BOULDER && board[constants.start_row]
-                [constants.start_col].entity != EMPTY) {
-                boulder_lr_spawn_check(board, constants, *status, i, j);
-                status->boulder_hit = TRUE;
-            }
-            //boulder moves down into space
-            else if (board[i][j].entity == EMPTY && 
-                board[i][j + 1].entity == BOULDER) {
-                board[i][j].entity = BOULDER;
-                board[i][j + 1].entity = EMPTY;
-            }
-            //boulder hits player on 1 life
-            if (board[i][j].entity == PLAYER && 
-                board[i][j + 1].entity == BOULDER && status->lives == 1) {
-                board[i][j + 1].entity = EMPTY;
-                status->boulder_hit = TRUE;
-            } 
-            //boulder hits player on 2+ lives
-            else if (board[i][j].entity == PLAYER && 
-                board[i][j + 1].entity == BOULDER && status->lives > 1) {
-                board[i][j].entity = BOULDER;
-                board[i][j + 1].entity = EMPTY;
-                status->boulder_hit = TRUE;
-            }  
-        }
-    } 
-}
-
-void boulder_right(struct tile board[ROWS][COLS], 
-    struct constants constants, struct game_status *status) {
-
-    for (int j = COLS - 1; j > 0; j--) {
-        for (int i = 0; i < ROWS; i++) {
-            ///boulder hits player and spawn is currently occupied
-            if (board[i][j].entity == PLAYER && 
-                board[i][j - 1].entity == BOULDER && board[constants.start_row]
-                [constants.start_col].entity != EMPTY) {
-                boulder_lr_spawn_check(board, constants, *status, i, j);
-                status->boulder_hit = TRUE;
-            }
-            //boulder moves down into space
-            else if (board[i][j].entity == EMPTY && 
-                board[i][j - 1].entity == BOULDER) {
-                board[i][j].entity = BOULDER;
-                board[i][j - 1].entity = EMPTY;
-            }
-            //boulder hits player on 1 life
-            if (board[i][j].entity == PLAYER && 
-                board[i][j - 1].entity == BOULDER && status->lives == 1) {
-                board[i][j - 1].entity = EMPTY;
-                status->boulder_hit = TRUE;
-            } 
-            //boulder hits player on 2+ lives
-            else if (board[i][j].entity == PLAYER && 
-                board[i][j - 1].entity == BOULDER && status->lives > 1) {
-                board[i][j].entity = BOULDER;
-                board[i][j - 1].entity = EMPTY;
-                status->boulder_hit = TRUE;
-            }  
-        }
-    } 
-}
-
-//checks whether that the boulder that hits the player will still be at spawn
+//checks whether that the boulder that hits the player will be at spawn
 //after hit
-void boulder_ud_spawn_check(struct tile board[ROWS][COLS], 
-    struct constants constants, struct game_status status, int i, int j) {
+void boulder_spawn_check(struct tile board[ROWS][COLS], 
+    struct game_status status, struct constants constants, 
+    int r_offset, int c_offset, int i, int j) {
 
-    if (status.gravity == GRAVITY_UP) {
-        //is spawn is occuppied by a boulder?
-        if (board[constants.start_row][constants.start_col].entity == BOULDER) {
-            //if so, is it the same boulder that is currently below the player?
-            if (i + 1 == constants.start_row && j == constants.start_col) {
-                board[i + 1][j].entity = EMPTY;
-                board[i][j].entity = BOULDER;
-            } else {
-                board[i + 1][j].entity = EMPTY;
-            }
+    //is spawn is occupied by a boulder?
+    if (board[constants.start_row][constants.start_col].entity == BOULDER) {
+        //if so, is it the same boulder that is going to hit the player?
+        if (i + r_offset == constants.start_row && 
+            j + c_offset == constants.start_col) {
+            board[i + r_offset][j + c_offset].entity = EMPTY;
+            board[i][j].entity = BOULDER;
         } else {
-            board[i + 1][j].entity = EMPTY;
+            board[i + r_offset][j + c_offset].entity = EMPTY;
         }
-    } else if (status.gravity == GRAVITY_DOWN) {
-        //is spawn is occuppied by a boulder?
-        if (board[constants.start_row][constants.start_col].entity == BOULDER) {
-            //if so, is it the same boulder that is currently above the player?
-            if (i - 1 == constants.start_row && j == constants.start_col) {
-                board[i - 1][j].entity = EMPTY;
-                board[i][j].entity = BOULDER;
-            } else {
-                board[i - 1][j].entity = EMPTY;
-            }
-        } else {
-            board[i - 1][j].entity = EMPTY;
-        }
+    } else {
+        board[i + r_offset][j + c_offset].entity = EMPTY;
     }
 }
 
-void boulder_lr_spawn_check(struct tile board[ROWS][COLS], 
-    struct constants constants, struct game_status status, int i, int j) {
 
-    if (status.gravity == GRAVITY_LEFT) {
-        //is spawn is occuppied by a boulder?
-        if (board[constants.start_row][constants.start_col].entity == BOULDER) {
-            //if so, is it the same boulder that is currently below the player?
-            if (i == constants.start_row && j + 1 == constants.start_col) {
-                board[i][j + 1].entity = EMPTY;
-                board[i][j].entity = BOULDER;
-            } else {
-                board[i][j + 1].entity = EMPTY;
-            }
-        } else {
-            board[i][j + 1].entity = EMPTY;
-        }
-    } else if (status.gravity == GRAVITY_RIGHT) {
-        //is spawn is occuppied by a boulder?
-        if (board[constants.start_row][constants.start_col].entity == BOULDER) {
-            //if so, is it the same boulder that is currently below the player?
-            if (i == constants.start_row && j - 1 == constants.start_col) {
-                board[i][j - 1].entity = EMPTY;
-                board[i][j].entity = BOULDER;
-            } else {
-                board[i][j - 1].entity = EMPTY;
-            }
-        } else {
-            board[i][j - 1].entity = EMPTY;
-        }
-    }
-}
-
+//handles lava movement and damage
 void lava_turn(struct tile board[ROWS][COLS], struct game_status *status) {
-    //lava movement
+
     if (status->lava_mode == GAME_OF_LAVA) {
         game_of_lava(board);
     } else if (status->lava_mode == LAVA_SEEDS) {
         lava_seeds(board);
     }
-    //lava damage
+
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             if (board[i][j].entity == PLAYER && board[i][j].has_lava) {
@@ -780,6 +647,7 @@ void lava_turn(struct tile board[ROWS][COLS], struct game_status *status) {
     }
 }
 
+//handles the logic for lava birth, survival and death in game of lava
 void game_of_lava(struct tile board[ROWS][COLS]) {
 
     for (int i = 0; i < ROWS; i++) {
@@ -808,6 +676,7 @@ void game_of_lava(struct tile board[ROWS][COLS]) {
     }
 }
 
+//handles the logic for lava birth, survival and death in lava seeds
 void lava_seeds(struct tile board[ROWS][COLS]) {
 
     for (int i = 0; i < ROWS; i++) {
@@ -830,58 +699,80 @@ void lava_seeds(struct tile board[ROWS][COLS]) {
     }
 }
 
+//handles consequences of player being hit by boulder of lava
 void player_hit(struct tile game_board[ROWS][COLS],  
-    struct tile true_board[ROWS][COLS], struct constants constants, 
-    struct game_status *status) {
+    struct tile true_board[ROWS][COLS], struct game_status *status, 
+    struct constants constants) {
 
     (status->lives)--;
     if (status->lives == 0) {
-        true_board[status->player_row][status->player_col].entity = PLAYER;
-        printf("Game Lost! You scored %d points!\n", status->score);
-        print_correct_board(game_board, true_board, *status, constants);
-        exit(0);
+        zero_life_ending_sequence(game_board, true_board, status, constants);
     } else {
         //respawn point is clear
         if (true_board[constants.start_row]
             [constants.start_col].entity == EMPTY &&
             true_board[constants.start_row]
             [constants.start_col].has_lava == FALSE) {
-            printf("Respawning!\n");
-
-            true_board[constants.start_row]
-            [constants.start_col].entity = PLAYER;
-            status->player_row = constants.start_row;
-            status->player_col = constants.start_col;
-
-            if (status->boulder_hit) {
-                status->boulder_hit = FALSE;
-            } else if (status->lava_hit) {
-                status->lava_hit = FALSE;
-                print_correct_board(game_board, true_board, *status, constants);
-            }
+            respawn_sequence(game_board, true_board, status, constants);
         } 
         else if (status->lava_mode == LAVA_NONE) {
-            status->shadow_entire_board = TRUE;
-            true_board[status->player_row][status->player_col].entity = PLAYER;
-
             printf("Respawn blocked! Game over. Final score: %d points.\n", 
                 status->score);
-            print_correct_board(game_board, true_board, *status, constants);
-            exit(0);
+            respawn_blocked_ending(game_board, true_board, status, constants);
         } else {
-            status->shadow_entire_board = TRUE;
-            true_board[status->player_row][status->player_col].entity = PLAYER;
-
             printf("Respawn blocked! You're toast! Final score: %d points.\n", 
                 status->score);
-            print_correct_board(game_board, true_board, *status, constants);
-            exit(0);
+            respawn_blocked_ending(game_board, true_board, status, constants);
         }
     }
 }
 
+//ending sequence for if the player runs out of lives
+void zero_life_ending_sequence(struct tile game_board[ROWS][COLS],
+    struct tile true_board[ROWS][COLS], 
+    struct game_status *status, struct constants constants) {
+    
+    true_board[status->player_row][status->player_col].entity = PLAYER;
+    printf("Game Lost! You scored %d points!\n", status->score);
+    print_correct_board(game_board, true_board, *status, constants);
+    exit(0);
+}
+
+//respawn sequence for when spawn isn't obstructed
+void respawn_sequence(struct tile game_board[ROWS][COLS],
+    struct tile true_board[ROWS][COLS], 
+    struct game_status *status, struct constants constants) {
+    
+    printf("Respawning!\n");
+
+    true_board[constants.start_row][constants.start_col].entity = PLAYER;
+    status->player_row = constants.start_row;
+    status->player_col = constants.start_col;
+
+    if (status->boulder_hit) {
+        status->boulder_hit = FALSE;
+    } else if (status->lava_hit) {
+        status->lava_hit = FALSE;
+        print_correct_board(game_board, true_board, *status, constants);
+    }
+}
+
+//ending sequence for when spawn is obstructed
+void respawn_blocked_ending(struct tile game_board[ROWS][COLS],
+    struct tile true_board[ROWS][COLS], 
+    struct game_status *status, struct constants constants) {
+    
+    status->shadow_entire_board = TRUE;
+    true_board[status->player_row][status->player_col].entity = PLAYER;
+    print_correct_board(game_board, true_board, *status, constants);
+    exit(0);
+}
+
 //toggles the state of the illumination flag
 void illuminate_toggle(struct game_status *status) {
+
+    scanf("%d", &status->illumination_radius);
+
     if (status->illumination_radius <= 0) {
         status->illumination = FALSE;
         printf("Illumination Mode: Deactivated\n");
@@ -893,6 +784,7 @@ void illuminate_toggle(struct game_status *status) {
 
 //toggles the state of the shadowed flag
 void shadow_toggle(struct game_status *status) {
+
     if (status->shadowed == FALSE) {
         printf("Shadow Mode: Activated\n");
         status->shadowed = TRUE;
@@ -941,6 +833,7 @@ void shadow(struct tile game_board[ROWS][COLS],
     }
 }
 
+//checks each tile and whether it should be hidden using rays
 int check_hidden(struct tile board[ROWS][COLS], 
     struct game_status status, int i, int j) {
 
@@ -957,6 +850,7 @@ int check_hidden(struct tile board[ROWS][COLS],
         int current_row = (int)(round(raw_row));
         int current_col = (int)(round(raw_col));
 
+        //stop before reaching the actual tile as to not give false positives
         if (raw_row >= i - 0.5 && raw_row <= i + 0.5 &&
             raw_col >= j - 0.5 && raw_col <= j + 0.5) {
             break;
@@ -978,8 +872,49 @@ int check_hidden(struct tile board[ROWS][COLS],
 
     if (corner_blocked_above && corner_blocked_below) {
         return TRUE;
-    } 
-    return FALSE;   
+    } else {
+        return FALSE; 
+    }
+}
+
+//checks whether one of the tiles directly above the corner causes a blocked ray
+int above_corner_check(struct tile board[ROWS][COLS], 
+    double row, double col, int gradient_x, int gradient_y) {
+
+    int base_row = (int)(floor(row));
+    int base_col;
+
+    /*
+    this check determines whether to check the left or right side of the
+    corner since at the very last corner, you don't want to check the actual
+    tile itself and give a false positive
+    */
+    if (gradient_x * gradient_y > 0) {
+        base_col = (int)(ceil(col));
+    } else {
+        base_col = (int)(floor(col));
+    }
+    return (type_check(board, base_row, base_col));
+}
+
+//checks whether one of the tiles directly below the corner causes a blocked ray
+int below_corner_check(struct tile board[ROWS][COLS], 
+    double row, double col, int gradient_x, int gradient_y) {
+
+    int base_row = (int)(ceil(row));
+    int base_col;
+
+    /*
+    this check determines whether to check the left or right side of the
+    corner since at the very last corner, you don't want to check the actual
+    tile itself and give a false positive
+    */
+    if (gradient_x * gradient_y > 0) {
+        base_col = (int)(floor(col));
+    } else {
+        base_col = (int)(ceil(col));
+    }
+    return (type_check(board, base_row, base_col));
 }
 
 /*
@@ -994,8 +929,10 @@ int check_hidden(struct tile board[ROWS][COLS],
 ==============================================================================
 */
 
+//initialises every constant and variable in the structs
 void initialise_constants_and_game_status(struct tile true_board[ROWS][COLS],
-    struct constants *constants, struct game_status *status) {
+    struct game_status *status, struct constants *constants) {
+
     printf("--- Gameplay Phase ---\n"); 
 
     status->player_row = constants->start_row;
@@ -1021,6 +958,7 @@ void initialise_constants_and_game_status(struct tile true_board[ROWS][COLS],
     }
 }
 
+//determines whether a tile placement is valid
 int check_valid_placement(struct tile board[ROWS][COLS], int row, int col) {
 
     int valid_placement = TRUE;
@@ -1036,6 +974,7 @@ int check_valid_placement(struct tile board[ROWS][COLS], int row, int col) {
     return valid_placement;
 }
 
+//determines whether any tile in the rectangular bound is invalid to place on
 int validate_grouped_walls(struct tile board[ROWS][COLS], 
     int start_row, int start_col, int end_row, int end_col) {
 
@@ -1053,7 +992,7 @@ int validate_grouped_walls(struct tile board[ROWS][COLS],
         for (int j = start_col; j <= end_col; j++) {
             if (board[i][j].entity != DIRT) {
                 is_occupied = TRUE;
-                //saves unneccessary checking once one invalid tile is found
+                //saves unnecessary checking once one invalid tile is found
                 break;
             }
         }
@@ -1069,12 +1008,13 @@ int validate_grouped_walls(struct tile board[ROWS][COLS],
 
 //checks whether movement will arrive at a valid destination
 int valid_move(struct tile board[ROWS][COLS], int new_row, int new_col) {
+
     return (new_row >= 0 && new_row < ROWS &&
-            new_col >= 0 && new_col < COLS &&
-            (board[new_row][new_col].entity == EMPTY ||
-             board[new_row][new_col].entity == DIRT ||
-             board[new_row][new_col].entity == GEM ||
-             board[new_row][new_col].entity == EXIT_UNLOCKED));
+        new_col >= 0 && new_col < COLS &&
+        (board[new_row][new_col].entity == EMPTY ||
+        board[new_row][new_col].entity == DIRT ||
+        board[new_row][new_col].entity == GEM ||
+        board[new_row][new_col].entity == EXIT_UNLOCKED));
 }
 
 //counts how many type of a certain entity are currently on the board
@@ -1094,14 +1034,14 @@ int entity_counter(struct tile board[ROWS][COLS], enum entity entity_type) {
 //updates the score based on dirt and gem collection
 int update_score(struct tile board[ROWS][COLS], 
     struct game_status status, int row, int col) {
+        
     if (board[row][col].entity == DIRT) {
         if (status.lava_mode != LAVA_NONE) {
             return POINTS_DIRT_LAVA;
         } else {
             return POINTS_DIRT_NORMAL;
         }
-    }
-    else if (board[row][col].entity == GEM) {
+    } else if (board[row][col].entity == GEM) {
         board[row][col].entity = EMPTY;
         if (status.lava_mode != LAVA_NONE) {
             return POINTS_GEM_LAVA;
@@ -1112,9 +1052,37 @@ int update_score(struct tile board[ROWS][COLS],
     return 0;
 }
 
+//calculates the maximum remaining points depending on gamemode
+int calc_max_points_remaining(struct tile board[ROWS][COLS], 
+    struct game_status status) {
+    
+    int maximum_points_remaining;
+    if (status.lava_mode != LAVA_NONE) {
+        maximum_points_remaining = (entity_counter(board, DIRT) * 
+        POINTS_DIRT_LAVA) + (entity_counter(board, GEM) * POINTS_GEM_LAVA);
+    } else {
+        maximum_points_remaining = entity_counter(board, DIRT) * 
+        POINTS_DIRT_NORMAL + 
+        (entity_counter(board, GEM) * POINTS_GEM_NORMAL);
+    }
+    return maximum_points_remaining;
+}
+
+//calculates how much of the map the player has explored
+double calc_completion_percent(struct tile board[ROWS][COLS], 
+    struct constants constants) {
+
+    double completion_percentage = 100.0 * 
+    (1.0 - (double)(entity_counter(board, DIRT) + entity_counter(board, GEM)) /
+    (constants.init_dirt + constants.init_gem));
+
+    return completion_percentage;
+}
+
 //determines whether to open the exits based on how many gems remaining 
 void check_exit_condition(struct tile board[ROWS][COLS], 
     struct game_status status) {
+
     if (entity_counter(board, GEM) == 0) {
         open_exits(board);
     }
@@ -1129,20 +1097,12 @@ void check_exit_condition(struct tile board[ROWS][COLS],
 
 //opens all exits on the map
 void open_exits(struct tile board[ROWS][COLS]) {
+
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             if (board[i][j].entity == EXIT_LOCKED) {
                 board[i][j].entity = EXIT_UNLOCKED;
             }
-        }
-    }
-}
-
-void board_update(struct tile value_board[ROWS][COLS], 
-    struct tile target_board[ROWS][COLS]) {
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS; j++) {
-            target_board[i][j].entity = value_board[i][j].entity;
         }
     }
 }
@@ -1166,19 +1126,22 @@ void print_correct_board(struct tile game_board[ROWS][COLS],
     } 
 }
 
-void print_gravity_direction(int gravity) {
+//prints messages after gravity direction is changed
+void print_gravity_direction(struct game_status *status) {
 
-    if (gravity == GRAVITY_UP) {
+    scanf(" %c", &status->gravity);
+    if (status->gravity == GRAVITY_UP) {
         printf("Gravity now pulls UP!\n");
-    } else if (gravity == GRAVITY_DOWN) {
+    } else if (status->gravity == GRAVITY_DOWN) {
         printf("Gravity now pulls DOWN!\n");
-    } else if (gravity == GRAVITY_LEFT) {
+    } else if (status->gravity == GRAVITY_LEFT) {
         printf("Gravity now pulls LEFT!\n");
-    } else if (gravity == GRAVITY_RIGHT) {
+    } else if (status->gravity == GRAVITY_RIGHT) {
         printf("Gravity now pulls RIGHT!\n");
     }
 }
 
+//intakes new commands to check whether lava mode should be activated
 void update_command_history(struct game_status *status, char new_command) {
 
     for (int i = 0; i < CMD_HISTORY_LENGTH - 1; i++) {
@@ -1187,6 +1150,7 @@ void update_command_history(struct game_status *status, char new_command) {
     status->cmd_history[CMD_HISTORY_LENGTH - 1] = new_command;
 }
 
+//checks whether the command history matches a lava code
 void check_lava_code(struct game_status *status) {
 
     if (status->cmd_history[0] == UP_SINGLE && 
@@ -1210,10 +1174,12 @@ void check_lava_code(struct game_status *status) {
     }
 }
 
+//counts all 8 tiles around a tile and how many of them are lava
 int count_adjacent_lava(struct tile board[ROWS][COLS], int i, int j) {
 
     int adjacent_lava_counter = 0;
 
+    //modulus used for wraparound tiles in the first/last row/column
     if (board[(10 + i - 1) % ROWS][(10 + j - 1) % COLS].has_lava) {
         adjacent_lava_counter++;
     } 
@@ -1241,53 +1207,25 @@ int count_adjacent_lava(struct tile board[ROWS][COLS], int i, int j) {
     return adjacent_lava_counter;
 }
 
-int above_corner_check(struct tile board[ROWS][COLS], 
-    double row, double col, int gradient_x, int gradient_y) {
-
-    int base_row = (int)(floor(row));
-    int base_col;
-
-    if (gradient_x * gradient_y > 0) {
-        base_col = (int)(floor(col)) + 1;
-    } else {
-        base_col = (int)(floor(col));
-    }
-
-    char type = board[base_row][base_col].entity;
-    if (type == WALL || type == BOULDER || type == GEM) {
-        return TRUE; 
-    }
-    return FALSE;
-}
-
-int below_corner_check(struct tile board[ROWS][COLS], 
-    double row, double col, int gradient_x, int gradient_y) {
-
-    int base_row = (int)(floor(row)) + 1;
-    int base_col;
-
-    if (gradient_x * gradient_y > 0) {
-        base_col = (int)(floor(col));
-    } else {
-        base_col = (int)(floor(col)) + 1;
-    }
+//helper for corner check to see whether corner collides with opaque object
+int type_check(struct tile board[ROWS][COLS], int base_row, int base_col) {
     
     char type = board[base_row][base_col].entity;
     if (type == WALL || type == BOULDER || type == GEM) {
         return TRUE; 
+    } else {
+        return FALSE;
     }
-    return FALSE;
 }
 
+//shadows the entire board when player is hit by boulder on respawn point
 void shadow_entire_board(struct tile game_board[ROWS][COLS], 
     struct tile true_board[ROWS][COLS], struct game_status status) {
     
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             game_board[i][j].has_lava = true_board[i][j].has_lava;
-            if (i == status.player_row && j == status.player_col) {
-                game_board[i][j].entity = PLAYER;
-            } else {
+            if (i != status.player_row || j != status.player_col) {
                 game_board[i][j].entity = HIDDEN;
             }
         }
@@ -1304,7 +1242,7 @@ void shadow_entire_board(struct tile game_board[ROWS][COLS],
 // Definitions of Provided Functions
 // ===========================================================================
 
-// Given a 2D board array, initialise all tile entities to DIRT.
+//given a 2D board array, initialise all tile entities to DIRT.
 void initialise_board(struct tile board[ROWS][COLS]) {
 
     for (int row = 0; row < ROWS; row++) {
@@ -1316,9 +1254,8 @@ void initialise_board(struct tile board[ROWS][COLS]) {
     }
 }
 
-// Prints the game board, showing the player's position and lives remaining
-void print_board(
-    struct tile board[ROWS][COLS], int lives_remaining) {
+//prints the game board, showing the player's position and lives remaining
+void print_board(struct tile board[ROWS][COLS], int lives_remaining) {
 
     print_board_line();
     print_board_header(lives_remaining);
@@ -1358,12 +1295,12 @@ void print_board(
     return;
 }
 
-// Helper function for print_board(). You will not need to call this.
+//helper function for print_board(). You will not need to call this.
 void print_board_header(int lives) {
     printf("| Lives: %d    C A V E R U N             |\n", lives);
 }
 
-// Helper function for print_board(). You will not need to call this.
+//helper function for print_board(). You will not need to call this.
 void print_board_line(void) {
     printf("+");
     for (int col = 0; col < COLS; col++) {
@@ -1372,7 +1309,7 @@ void print_board_line(void) {
     printf("\n");
 }
 
-// Prints game statistics: tile types, completion %, and points remaining.
+//prints game statistics: tile types, completion %, and points remaining.
 void print_map_statistics(
     int number_of_dirt_tiles,
     int number_of_gem_tiles,
