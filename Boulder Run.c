@@ -25,7 +25,6 @@ realistic cave experience.
 #include <ctype.h>
 #include <math.h>
 
-//this is a test comment
 //provided constants
 
 #define COLS 10
