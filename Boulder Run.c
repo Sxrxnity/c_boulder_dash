@@ -7,7 +7,7 @@
 Overview: The game has two phases, a setup phase and a gameplay phase. In the 
 setup phase, the player enters the starting position of their character, as 
 well as the position of other entities on the map such as boulders, gems
-and exits. In the gameplay phase, the player manoeuvers their character to 
+and exits. In the gameplay phase, the player manoeuvers their character to
 collect gems and open the exits to win the game. Boulders and lava will try to
 kill the player, and if the player is hit, they lose a life and are respawned 
 at their original position. Other features include printing the player's 
@@ -29,8 +29,8 @@ realistic cave experience.
 
 #define COLS 10
 #define ROWS 10
-#define INVALID_ROW -1
-#define INVALID_COL -1
+#define INVALID_ROW (-1)
+#define INVALID_COL (-1)
 #define INITIAL_LIVES 3
 
 //add your own #defines constants below this line
@@ -203,7 +203,7 @@ void player_hit(struct tile game_board[ROWS][COLS],
     struct constants constants);
 void zero_life_ending_sequence(struct tile game_board[ROWS][COLS],
     struct tile true_board[ROWS][COLS], 
-    struct game_status *status, struct constants constants);
+    struct game_status status, struct constants constants);
 void respawn_sequence(struct tile game_board[ROWS][COLS],
     struct tile true_board[ROWS][COLS], 
     struct game_status *status, struct constants constants);
@@ -482,7 +482,7 @@ void move_player_single(struct tile board[ROWS][COLS],
     status->can_dash = TRUE;
 }
 
-//moves player by multiple tiles if dash if valid
+//moves player by multiple tiles if dash is valid
 void move_player_dash(struct tile board[ROWS][COLS], 
     struct game_status *status, char instruction, char instruction2) {
     
@@ -706,7 +706,7 @@ void player_hit(struct tile game_board[ROWS][COLS],
 
     (status->lives)--;
     if (status->lives == 0) {
-        zero_life_ending_sequence(game_board, true_board, status, constants);
+        zero_life_ending_sequence(game_board, true_board, *status, constants);
     } else {
         //respawn point is clear
         if (true_board[constants.start_row]
@@ -730,11 +730,11 @@ void player_hit(struct tile game_board[ROWS][COLS],
 //ending sequence for if the player runs out of lives
 void zero_life_ending_sequence(struct tile game_board[ROWS][COLS],
     struct tile true_board[ROWS][COLS], 
-    struct game_status *status, struct constants constants) {
+    struct game_status status, struct constants constants) {
     
-    true_board[status->player_row][status->player_col].entity = PLAYER;
-    printf("Game Lost! You scored %d points!\n", status->score);
-    print_correct_board(game_board, true_board, *status, constants);
+    true_board[status.player_row][status.player_col].entity = PLAYER;
+    printf("Game Lost! You scored %d points!\n", status.score);
+    print_correct_board(game_board, true_board, status, constants);
     exit(0);
 }
 
@@ -1052,7 +1052,7 @@ int update_score(struct tile board[ROWS][COLS],
     return 0;
 }
 
-//calculates the maximum remaining points depending on gamemode
+//calculates the maximum remaining points depending on game mode
 int calc_max_points_remaining(struct tile board[ROWS][COLS], 
     struct game_status status) {
     
