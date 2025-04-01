@@ -571,6 +571,7 @@ void boulder_turn(struct tile board[ROWS][COLS],
     }
 }
 
+//physically moves the boulders
 void boulder_move(struct tile board[ROWS][COLS], struct game_status *status,
     struct constants constants, int r_offset, int c_offset, int i, int j) {
 
